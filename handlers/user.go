@@ -1,10 +1,9 @@
 package handlers
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"todo-app/database"
 	"todo-app/database/dbHelper"
 	"todo-app/models"
@@ -17,7 +16,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	var req models.UserRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
 
@@ -27,7 +26,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// creates a user object that can be saved in the database
-	user := &models.User{
+	user := models.User{
 		Name:     req.Name,
 		Email:    req.Email,
 		Password: string(hashedPassword),
@@ -40,23 +39,13 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// blank out password before sending it to back to the user as json
-	user.Password = ""
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(user)
 }
 
-func generateToken() string {
-	b := make([]byte, 32)
-	rand.Read(b)
-	return hex.EncodeToString(b)
-}
-
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	var creds struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
+	var creds models.UserRequest
+
 	// decode request
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -94,23 +83,26 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		"session_id": session.ID,
 	})
 
-	// respond
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Login successful!"))
-
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		SessionID string `json:"session_id"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+	// Get the "Authorization" header
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		http.Error(w, "Authorization header missing", http.StatusUnauthorized)
 		return
 	}
 
-	err := dbHelper.LogoutIfNotExpired(database.Todo, req.SessionID)
+	// Expected format: "Bearer <session_id>"
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
+		return
+	}
+	sessionID := parts[1]
+
+	// Attempt logout
+	err := dbHelper.LogoutIfNotExpired(database.Todo, sessionID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return

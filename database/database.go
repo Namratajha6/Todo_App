@@ -46,10 +46,6 @@ func ConnectAndMigrate(host, port, databaseName, user, password string, sslMode 
 	return migrateUp(DB)
 }
 
-func ShutdownDatabase() error {
-	return Todo.Close()
-}
-
 // migrateUp function migrate the database and handles the migration logic
 func migrateUp(db *sqlx.DB) error {
 	driver, driErr := postgres.WithInstance(db.DB, &postgres.Config{})

@@ -6,7 +6,7 @@ import (
 )
 
 // CreateUser inserts a new user into the DB
-func CreateUser(db *sqlx.DB, user *models.User) error {
+func CreateUser(db *sqlx.DB, user models.User) error {
 	query := `INSERT INTO users (name, email, password) VALUES ($1, $2, $3)`
 	_, err := db.Exec(query, user.Name, user.Email, user.Password)
 	return err
