@@ -22,7 +22,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		http.Error(w, "Error hashing password", http.StatusInternalServerError)
+		http.Error(w, "error hashing password", http.StatusInternalServerError)
 		return
 	}
 	// creates a user object that can be saved in the database
@@ -35,7 +35,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	// save user in db
 	err = dbHelper.CreateUser(database.Todo, user)
 	if err != nil {
-		http.Error(w, "Failed to register user", http.StatusInternalServerError)
+		http.Error(w, "failed to register user", http.StatusInternalServerError)
 		return
 	}
 
@@ -48,20 +48,20 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	// decode request
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	// fetch user by email
 	user, err := dbHelper.GetUserByEmail(database.Todo, creds.Email)
 	if err != nil {
-		http.Error(w, "User not found", http.StatusUnauthorized)
+		http.Error(w, "user not found", http.StatusUnauthorized)
 		return
 	}
 
 	// compare password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(creds.Password)); err != nil {
-		http.Error(w, "Invalid password", http.StatusUnauthorized)
+		http.Error(w, "invalid password", http.StatusUnauthorized)
 		return
 	}
 
@@ -72,7 +72,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = dbHelper.CreateUserSession(database.Todo, session)
 	if err != nil {
-		http.Error(w, "Could not create session", http.StatusInternalServerError)
+		http.Error(w, "could not create session", http.StatusInternalServerError)
 		return
 	}
 
@@ -83,20 +83,23 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		"session_id": session.ID,
 	})
 
+	// respond
+	w.WriteHeader(http.StatusOK)
+
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	// Get the "Authorization" header
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
-		http.Error(w, "Authorization header missing", http.StatusUnauthorized)
+		http.Error(w, "authorization header missing", http.StatusUnauthorized)
 		return
 	}
 
 	// Expected format: "Bearer <session_id>"
 	parts := strings.Split(authHeader, " ")
 	if len(parts) != 2 || parts[0] != "Bearer" {
-		http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
+		http.Error(w, "invalid Authorization header format", http.StatusUnauthorized)
 		return
 	}
 	sessionID := parts[1]
@@ -109,5 +112,6 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Logout successful"))
+	w.Write([]byte("logout successfully"))
+
 }

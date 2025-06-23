@@ -11,12 +11,6 @@ func CreateUserSession(db *sqlx.DB, session *models.UserSession) error {
 	return db.QueryRow(query, session.UserID).Scan(&session.ID, &session.CreatedAt, &session.ArchivedAt)
 }
 
-func ArchiveSession(db *sqlx.DB, sessionID string) error {
-	query := `UPDATE user_session SET archived_at = NOW() WHERE id = $1`
-	_, err := db.Exec(query, sessionID)
-	return err
-}
-
 func LogoutIfNotExpired(db *sqlx.DB, sessionID string) error {
 	query := `
 		UPDATE user_session

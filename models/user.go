@@ -8,7 +8,7 @@ type User struct {
 	Email      string     `json:"email"`
 	Password   string     `json:"-"`
 	CreatedAt  time.Time  `json:"created_at"`
-	ArchivedAt *time.Time `json:"archived_at,omitempty"`
+	ArchivedAt *time.Time `json:"archived_at"`
 }
 
 type UserRequest struct {

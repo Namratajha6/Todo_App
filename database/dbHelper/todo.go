@@ -21,8 +21,18 @@ func UpdateTodo(db *sqlx.DB, todo *models.UpdateTodo, userID string) error {
 		    is_completed = $3
 		WHERE id = $4 AND user_id = $5
 	`
-	_, err := db.Exec(query, todo.Name, todo.Description, todo.IsCompleted, todo.ID, userID)
-	return err
+	res, err := db.Exec(query, todo.Name, todo.Description, todo.IsCompleted, todo.ID, userID)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("not updated, check details")
+	}
+	return nil
 }
 
 func ValidateSession(db *sqlx.DB, sessionID string) (string, error) {
